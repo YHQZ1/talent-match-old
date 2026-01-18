@@ -1,105 +1,110 @@
+import re
+from datetime import datetime
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-import re
 
-# Specialized CS & Engineering Skills Database
+# ============================================================
+# SKILLS DATABASE (CS / ENGINEERING)
+# ============================================================
+
 SKILLS_DB = [
     # Languages
-    "Python", "Java", "C++", "C", "C#", "JavaScript", "TypeScript", "Go", "Rust", "Swift", "Kotlin", "PHP", "Ruby", "Scala", "R", "Matlab", "Dart", "Lua", "Perl", "Shell", "Bash",
-    
-    # Web & Frameworks
-    "HTML", "CSS", "React", "Angular", "Vue", "Next.js", "Node.js", "Django", "Flask", "FastAPI", "Spring Boot", "ASP.NET", "Laravel", "Ruby on Rails", "Tailwind", "Bootstrap", "jQuery", "GraphQL", "REST API",
-    
-    # Data Science & ML
-    "Machine Learning", "Deep Learning", "Data Science", "NLP", "Computer Vision", "TensorFlow", "PyTorch", "Keras", "Scikit-learn", "Pandas", "NumPy", "Matplotlib", "Seaborn", "OpenCV", "Hugging Face", "LLM", "Generative AI", "NLTK", "Spacy", "Jupyter",
-    
-    # Cloud & DevOps
-    "AWS", "Azure", "GCP", "Docker", "Kubernetes", "Terraform", "Ansible", "Jenkins", "Git", "GitHub", "GitLab", "CI/CD", "Linux", "Unix", "Nginx", "Apache", "Heroku", "Vercel", "Netlify",
-    
+    "Python",
+    "Java",
+    "C++",
+    "C",
+    "C#",
+    "JavaScript",
+    "TypeScript",
+    "Go",
+    "Rust",
+    "Swift",
+    "Kotlin",
+    "PHP",
+    "Ruby",
+    "Scala",
+    "R",
+    "Matlab",
+    # Web / Backend
+    "HTML",
+    "CSS",
+    "React",
+    "Angular",
+    "Vue",
+    "Node.js",
+    "Next.js",
+    "Django",
+    "Flask",
+    "FastAPI",
+    "Spring Boot",
+    # Data / ML
+    "Machine Learning",
+    "Deep Learning",
+    "Data Science",
+    "NLP",
+    "TensorFlow",
+    "PyTorch",
+    "Scikit-learn",
+    "Pandas",
+    "NumPy",
+    # Cloud / DevOps
+    "AWS",
+    "Azure",
+    "GCP",
+    "Docker",
+    "Kubernetes",
+    "Terraform",
+    "CI/CD",
+    "Linux",
+    "Git",
+    "GitHub",
     # Databases
-    "SQL", "NoSQL", "MongoDB", "PostgreSQL", "MySQL", "Oracle", "Redis", "Cassandra", "Elasticsearch", "DynamoDB", "Firebase", "Snowflake", "Databricks",
-    
-    # CS Concepts & Tools
-    "Algorithms", "Data Structures", "System Design", "OOP", "Functional Programming", "Agile", "Scrum", "Jira", "Trello", "Unit Testing", "Selenium", "Postman", "Swagger"
+    "SQL",
+    "NoSQL",
+    "MongoDB",
+    "PostgreSQL",
+    "MySQL",
+    "Redis",
+    # CS Concepts
+    "Data Structures",
+    "Algorithms",
+    "System Design",
+    "OOP",
 ]
 
+# ============================================================
+# SKILL EXTRACTION
+# ============================================================
+
+
 def extract_skills(text):
-    found_skills = []
-    text_lower = text.lower()
+    text = text.lower()
+    found = []
+
     for skill in SKILLS_DB:
-        # Improved strict matching to avoid false positives (e.g. "C" in "Center")
-        if len(skill) <= 3:
-             pattern = r'(?:^|\s)' + re.escape(skill.lower()) + r'(?:$|[\s,.])'
+        s = skill.lower()
+        if len(s) <= 3:
+            pattern = rf"(?:^|\s){re.escape(s)}(?:$|[\s,./])"
         else:
-             pattern = r'\b' + re.escape(skill.lower()) + r'\b'
-             
-        if re.search(pattern, text_lower):
-            found_skills.append(skill)
-    return list(set(found_skills))
+            pattern = rf"\b{re.escape(s)}\b"
 
-import spacy
-from datetime import datetime
-from dateutil import parser as date_parser
+        if re.search(pattern, text):
+            found.append(skill)
 
-try:
-    nlp = spacy.load("en_core_web_sm")
-except ImportError:
-    import en_core_web_sm
-    nlp = en_core_web_sm.load()
-except:
-    nlp = None # Fallback
+    return list(set(found))
 
-def parse_date(date_str):
-    """
-    Parse a date string into a datetime object. 
-    Handles 'Present', 'Current', 'Now' as today.
-    Handles 'YYYY', 'Mon YYYY', 'Month YYYY', 'MM/YYYY'.
-    """
-    date_str = date_str.strip().lower()
-    if date_str in ['present', 'current', 'now', 'date', 'till date', 'today']:
-        return datetime.now()
-    
-    # Try parsing YYYY specifically
-    if re.match(r'^\d{4}$', date_str):
-        try:
-            return datetime(int(date_str), 1, 1) # Assume start of year
-        except:
-             pass
-    
-    try:
-        # Use dateutil for flexible parsing
-        # default to 1st of Jan if month missing, or 1st of month if day missing
-        return date_parser.parse(date_str, default=datetime(datetime.now().year, 1, 1))
-    except:
-        return None
 
-def calculate_duration_in_years(start_str, end_str):
-    """Calculate the difference between two dates in years."""
-    start_date = parse_date(start_str)
-    end_date = parse_date(end_str)
-    
-    if start_date and end_date:
-        if end_date < start_date:
-             return 0.0 # Invalid range
-        
-        diff = end_date - start_date
-        years = diff.days / 365.25
-        return round(years, 2)
-    return 0.0
-
-import re
-from datetime import datetime
-
-# ================= EXPERIENCE EXTRACTION (FIXED) =================
+# ============================================================
+# EXPERIENCE EXTRACTION (STRICT & SAFE)
+# ============================================================
 
 EXPERIENCE_HEADERS = [
+    "experience",
     "work experience",
     "professional experience",
-    "experience",
-    "employment",
     "employment history",
-    "work history"
+    "work history",
 ]
 
 STOP_HEADERS = [
@@ -110,237 +115,170 @@ STOP_HEADERS = [
     "achievements",
     "leadership",
     "interests",
-    "hobbies",
-    "languages",
-    "summary"
+    "summary",
 ]
 
-def extract_experience(text):
-    """
-    STRICT experience extraction:
-    ✅ Counts experience ONLY inside Work / Experience section
-    ❌ Ignores education, projects, leadership, internships unless explicitly under experience
-    ❌ Prevents student resumes from getting fake years
-    """
 
+def extract_experience(text):
     text_lower = text.lower()
 
-    # 1️⃣ Locate experience section
     start_idx = None
-    for header in EXPERIENCE_HEADERS:
-        pattern = rf"(?:^|\n)\s*{re.escape(header)}\s*(?:\:)?\s*(?:\n|$)"
-        match = re.search(pattern, text_lower)
-        if match:
-            start_idx = match.end()
+    for h in EXPERIENCE_HEADERS:
+        m = re.search(rf"(?:^|\n)\s*{h}\s*(?:\:)?\s*(?:\n|$)", text_lower)
+        if m:
+            start_idx = m.end()
             break
 
-    # ❗ NO EXPERIENCE SECTION → ZERO EXPERIENCE
     if start_idx is None:
         return ["0 Years"]
 
-    # 2️⃣ Determine where experience section ends
     end_idx = len(text_lower)
-    for header in STOP_HEADERS:
-        pattern = rf"(?:^|\n)\s*{re.escape(header)}\s*(?:\:)?\s*(?:\n|$)"
-        match = re.search(pattern, text_lower[start_idx:])
-        if match:
-            end_idx = start_idx + match.start()
+    for h in STOP_HEADERS:
+        m = re.search(rf"(?:^|\n)\s*{h}\s*(?:\:)?\s*(?:\n|$)", text_lower[start_idx:])
+        if m:
+            end_idx = start_idx + m.start()
             break
 
-    experience_text = text_lower[start_idx:end_idx]
+    section = text_lower[start_idx:end_idx]
 
-    # 3️⃣ Extract date ranges ONLY from experience section
-    date_pattern = re.findall(
-        r"(19\d{2}|20\d{2})\s*[-–]\s*(present|current|19\d{2}|20\d{2})",
-        experience_text
+    ranges = re.findall(
+        r"(19\d{2}|20\d{2})\s*[-–]\s*(present|current|19\d{2}|20\d{2})", section
     )
 
-    total_years = 0.0
-    current_year = datetime.now().year
+    total = 0.0
+    now = datetime.now().year
 
-    for start, end in date_pattern:
-        start_year = int(start)
-        end_year = current_year if end in ["present", "current"] else int(end)
+    for start, end in ranges:
+        s = int(start)
+        e = now if end in ["present", "current"] else int(end)
+        if e >= s:
+            total += e - s
 
-        if end_year >= start_year:
-            total_years += (end_year - start_year)
-
-    # 4️⃣ Safety caps
-    if total_years < 0.5:
+    if total < 0.5:
         return ["0 Years"]
 
-    total_years = min(total_years, 40)  # Hard cap
+    total = min(total, 40)
+    return [f"{round(total, 1)} Years"]
 
-    return [f"{round(total_years, 1)} Years"]
+
+# ============================================================
+# TEXT SIMILARITY
+# ============================================================
 
 
-def calculate_similarity(job_desc, resumes_texts):
-    if not resumes_texts or not job_desc:
+def calculate_similarity(job_desc, resumes):
+    if not resumes or not job_desc:
         return []
 
-    documents = [job_desc] + resumes_texts
-    
-    tfidf_vectorizer = TfidfVectorizer(stop_words='english')
-    tfidf_matrix = tfidf_vectorizer.fit_transform(documents)
-    
-    similarity_matrix = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:])
-    
-    return similarity_matrix[0].tolist()
+    docs = [job_desc] + resumes
+    tfidf = TfidfVectorizer(stop_words="english")
+    matrix = tfidf.fit_transform(docs)
+    scores = cosine_similarity(matrix[0:1], matrix[1:])
+    return scores[0].tolist()
 
 
-def calculate_component_scores(job_desc, resumes_texts, job_desc_raw, resumes_raw, weights):
-    """
-    Calculate weighted scores.
-    Args:
-        job_desc: Cleaned JD text (for TF-IDF)
-        resumes_texts: List of Cleaned Resume texts (for TF-IDF)
-        job_desc_raw: Raw JD text (for Skill extraction)
-        resumes_raw: List of Raw Resume texts (for Skill/Experience extraction)
-        weights: Dictionary of weights
-    """
-    if not resumes_texts or not job_desc:
-        return []
+# ============================================================
+# WEIGHTED MATCH SCORING (UI SLIDERS)
+# ============================================================
 
-    # 1. Similarity Scores (Context/Projects relevance) - Uses CLEANED text
-    similarity_scores = calculate_similarity(job_desc, resumes_texts)
-    
-    # 2. Extract JD Skills - Uses RAW text (preserves C++, C#, etc.)
+
+def calculate_component_scores(
+    job_desc_clean, resumes_clean, job_desc_raw, resumes_raw, weights
+):
+    similarity_scores = calculate_similarity(job_desc_clean, resumes_clean)
     jd_skills = set(extract_skills(job_desc_raw))
-    
+
     results = []
-    
-    for i, text_raw in enumerate(resumes_raw):
-        # text_raw is the raw string with newlines
-        
-        # Skills Score (Use Raw)
-        resume_skills = set(extract_skills(text_raw))
-        if jd_skills:
-            # Overlap score
-            skills_score = len(jd_skills.intersection(resume_skills)) / len(jd_skills)
-        else:
-            skills_score = len(resume_skills) / 20.0 # Fallback normalized
-        skills_score = min(1.0, skills_score)
-        
-        # Experience Score (Use Raw - essential for regex/newlines)
-        exp_list = extract_experience(text_raw)
-        max_exp = 0.0
-        for e in exp_list:
-             m = re.search(r"(\d+(?:\.\d+)?)", e)
-             if m:
-                 try:
-                     val = float(m.group(1))
-                     if val > max_exp: max_exp = val
-                 except: pass
-        
-        # Normalize: Assume 10 years is 'max' (1.0)
-        exp_score = min(1.0, max_exp / 10.0)
-        
-        # Education Score (Use Raw or Lower Raw)
-        edu_keywords = ['bachelor', 'master', 'phd', 'degree', 'university', 'college', 'b.tech', 'm.tech', 'bs', 'ms']
-        edu_score = 0.0
-        text_lower = text_raw.lower()
-        if any(kw in text_lower for kw in edu_keywords):
-            edu_score = 0.5 # Has some education mention
-            # Boost for higher degrees
-            if any(kw in text_lower for kw in ['master', 'phd', 'm.tech', 'ms']):
-                edu_score = 1.0
-        elif 'education' in text_lower:
-             edu_score = 0.3 # Section exists
-             
-        # Combined Weighted Score
-        raw_final_score = (
-            weights['skills'] * skills_score +
-            weights['experience'] * exp_score +
-            weights['education'] * edu_score +
-            weights['relevance'] * similarity_scores[i]
+
+    for i, raw in enumerate(resumes_raw):
+        resume_skills = set(extract_skills(raw))
+
+        skills_score = (
+            len(jd_skills & resume_skills) / len(jd_skills)
+            if jd_skills
+            else min(1.0, len(resume_skills) / 10)
         )
-        
-        # Normalize by sum of weights to ensure 0-100% range
-        total_weight = sum(weights.values())
-        if total_weight > 0:
-            final_score = raw_final_score / total_weight
-        else:
-            final_score = 0.0
-        
-        # Scale to 0-100
-        results.append({
-            'final_score': round(final_score * 100, 2),
-            'skills_score': round(skills_score * 100, 1),
-            'exp_score': round(exp_score * 100, 1),
-            'edu_score': round(edu_score * 100, 1),
-            'relevance_score': round(similarity_scores[i] * 100, 1)
-        })
-        
+
+        exp_list = extract_experience(raw)
+        years = 0.0
+        for e in exp_list:
+            m = re.search(r"(\d+(?:\.\d+)?)", e)
+            if m:
+                years = max(years, float(m.group(1)))
+
+        exp_score = min(1.0, years / 10.0)
+
+        edu_score = (
+            0.5
+            if any(x in raw.lower() for x in ["bachelor", "master", "phd", "degree"])
+            else 0.0
+        )
+
+        raw_score = (
+            weights["skills"] * skills_score
+            + weights["experience"] * exp_score
+            + weights["education"] * edu_score
+            + weights["relevance"] * similarity_scores[i]
+        )
+
+        total_weight = sum(weights.values()) or 1.0
+        final = raw_score / total_weight
+
+        results.append(
+            {
+                "final_score": round(final * 100, 2),
+                "skills_score": round(skills_score * 100, 1),
+                "exp_score": round(exp_score * 100, 1),
+                "edu_score": round(edu_score * 100, 1),
+                "relevance_score": round(similarity_scores[i] * 100, 1),
+            }
+        )
+
     return results
 
-def calculate_ats_score(resume_text, job_keywords=None):
-    """
-    ATS Quality Score (0–100)
-    Calibrated to match real ATS tools (especially for students / freshers)
-    Compatible with existing app.py call
-    """
 
+# ============================================================
+# ATS SCORE (CALIBRATED LIKE REAL ATS)
+# ============================================================
+
+
+def calculate_ats_score(resume_text, job_keywords=None):
     if not resume_text or not isinstance(resume_text, str):
         return 0.0
 
     text = resume_text.lower()
-    words = text.split()
-    wc = len(words)
-
-    # ---------------------------------
-    # 1️⃣ SKILL RELEVANCE (40%) – ATS SATURATION
-    # ---------------------------------
+    wc = len(text.split())
     resume_skills = set(s.lower() for s in extract_skills(resume_text))
 
+    # ---- Skill Saturation (40%)
     if job_keywords:
-        jd_skills = set(k.lower() for k in job_keywords)
-        matched = resume_skills.intersection(jd_skills)
-
-        match_ratio = len(matched) / max(1, len(jd_skills))
-
-        # ATS-style saturation curve
-        if match_ratio >= 0.6:
+        jd = set(k.lower() for k in job_keywords)
+        ratio = len(resume_skills & jd) / max(1, len(jd))
+        if ratio >= 0.6:
             skill_score = 1.0
-        elif match_ratio >= 0.4:
+        elif ratio >= 0.4:
             skill_score = 0.85
-        elif match_ratio >= 0.25:
+        elif ratio >= 0.25:
             skill_score = 0.7
         else:
-            skill_score = match_ratio
+            skill_score = ratio
     else:
         skill_score = min(1.0, len(resume_skills) / 8.0)
 
-    skill_score = min(1.0, skill_score)
-
-    # ---------------------------------
-    # 2️⃣ RESUME STRUCTURE (20%)
-    # ---------------------------------
-    sections = [
-        "experience",
-        "education",
-        "skills",
-        "projects",
-        "certifications",
-        "summary"
-    ]
+    # ---- Structure (20%)
+    sections = ["experience", "education", "skills", "projects", "summary"]
     section_score = sum(1 for s in sections if s in text) / len(sections)
 
-    # ---------------------------------
-    # 3️⃣ EXPERIENCE REALISM (15%) – FRESHER SAFE
-    # ---------------------------------
+    # ---- Experience (15%) – fresher safe
     exp_list = extract_experience(resume_text)
     years = 0.0
-
     for e in exp_list:
         m = re.search(r"(\d+(?:\.\d+)?)", e)
         if m:
-            try:
-                years = max(years, float(m.group(1)))
-            except:
-                pass
+            years = max(years, float(m.group(1)))
 
     if years == 0:
-        exp_score = 0.6        # strong project-based fresher
+        exp_score = 0.6
     elif years <= 2:
         exp_score = 0.7
     elif years <= 5:
@@ -348,9 +286,7 @@ def calculate_ats_score(resume_text, job_keywords=None):
     else:
         exp_score = 1.0
 
-    # ---------------------------------
-    # 4️⃣ PARSEABILITY & LENGTH (15%)
-    # ---------------------------------
+    # ---- Parseability (15%)
     if wc < 80:
         parse_score = 0.3
     elif wc < 150:
@@ -360,47 +296,37 @@ def calculate_ats_score(resume_text, job_keywords=None):
     else:
         parse_score = 1.0
 
-    # ---------------------------------
-    # 🔼 PROJECT STRENGTH BONUS (VERY IMPORTANT)
-    # ---------------------------------
-    project_keywords = [
-        "designed", "implemented", "optimized", "scalable",
-        "distributed", "latency", "throughput", "rps",
-        "ci/cd", "docker", "kubernetes", "aws"
+    # ---- Project bonus
+    project_terms = [
+        "designed",
+        "implemented",
+        "optimized",
+        "scalable",
+        "distributed",
+        "latency",
+        "throughput",
+        "docker",
+        "kubernetes",
+        "aws",
     ]
+    hits = sum(1 for k in project_terms if k in text)
+    project_bonus = 0.12 if hits >= 6 else 0.08 if hits >= 3 else 0.0
 
-    project_hits = sum(1 for kw in project_keywords if kw in text)
-
-    if project_hits >= 6:
-        project_bonus = 0.12
-    elif project_hits >= 3:
-        project_bonus = 0.08
-    else:
-        project_bonus = 0.0
-
-    # ---------------------------------
-    # 🚫 PENALTIES (MAX −20%)
-    # ---------------------------------
+    # ---- Penalties
     penalty = 0.0
-
-    if wc < 60:                  # image / badly parsed PDF
+    if wc < 60:
         penalty += 0.1
-    if len(resume_skills) > 40:  # keyword stuffing
+    if len(resume_skills) > 40:
         penalty += 0.1
 
-    penalty = min(0.2, penalty)
-
-    # ---------------------------------
-    # 🎯 FINAL ATS SCORE
-    # ---------------------------------
-    final_score = (
-        0.40 * skill_score +
-        0.20 * section_score +
-        0.15 * exp_score +
-        0.15 * parse_score
+    final = (
+        0.40 * skill_score
+        + 0.20 * section_score
+        + 0.15 * exp_score
+        + 0.15 * parse_score
     )
 
-    final_score = final_score + project_bonus - penalty
-    final_score = max(0.0, min(1.0, final_score))
+    final = final + project_bonus - min(0.2, penalty)
+    final = max(0.0, min(1.0, final))
 
-    return round(final_score * 100, 2)
+    return round(final * 100, 2)
