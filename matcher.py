@@ -404,4 +404,3 @@ def calculate_ats_score(resume_text, job_keywords=None):
     final_score = max(0.0, min(1.0, final_score))
 
     return round(final_score * 100, 2)
-
